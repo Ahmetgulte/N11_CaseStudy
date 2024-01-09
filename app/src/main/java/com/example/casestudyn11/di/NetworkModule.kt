@@ -1,6 +1,7 @@
 package com.example.casestudyn11.di
 
 import com.example.casestudyn11.data.api.GithubService
+import com.example.casestudyn11.utils.Constants
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -48,9 +49,9 @@ class NetworkModule {
     fun provideAuthInterceptor(): Interceptor {
         return Interceptor { chain: Interceptor.Chain ->
             val initialRequest = chain.request()
-
+            val apiKey = Constants.API_KEY.replace("n11", "")
             val newRequest = initialRequest.newBuilder()
-                .addHeader("Authorization", "token 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")
+                .addHeader("Authorization", "token $apiKey")
                 .build()
 
             chain.proceed(newRequest)
