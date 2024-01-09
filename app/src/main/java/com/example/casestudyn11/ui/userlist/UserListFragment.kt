@@ -61,7 +61,7 @@ class UserListFragment : Fragment() {
                         }
 
                         is UserListState.Content -> UserListContent(
-                            users = (state as UserListState.Content).userList,
+                            contentState = (state as UserListState.Content).contentState,
                             onSearchBarClicked = viewModel::onSearchBarClicked,
                             onUserClicked = viewModel::onUserItemClicked,
                             onFavoriteClicked = viewModel::updateFavorite

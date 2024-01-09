@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.annotation.concurrent.Immutable
 import javax.inject.Inject
 
 @HiltViewModel
@@ -40,7 +41,7 @@ class UserListViewModel @Inject constructor(
         viewModelScope.launch(coroutineExceptionHandler) {
             val userList = getUserListUseCase.getUserList()
             _uiState.update {
-                UserListState.Content(userList)
+                UserListState.Content(UserListContentState(userList))
             }
         }
     }
@@ -67,14 +68,14 @@ class UserListViewModel @Inject constructor(
         viewModelScope.launch {
             favoriteUpdatesDispatcher.getUpdates().collect { favoriteResult ->
                 if (favoriteResult.isSuccess) {
-                    val contentState = _uiState.value as? UserListState.Content ?: return@collect
+                    val currentState = _uiState.value as? UserListState.Content ?: return@collect
                     val (userId, isFavorite) = favoriteResult.getOrNull()!!
-                    val userList = contentState.userList.toMutableList()
+                    val userList = currentState.contentState.userList.toMutableList()
                     val index = userList.indexOfFirst { user ->
                         user.id == userId
                     }
                     userList[index] = userList[index].copy(isFavorite = isFavorite)
-                    _uiState.update { contentState.copy(userList = userList) }
+                    _uiState.update { currentState.copy(contentState = currentState.contentState.copy(userList = userList.toList())) }
 
                 } else {
                     Log.v("Tag", "error")
@@ -87,9 +88,12 @@ class UserListViewModel @Inject constructor(
 
 sealed class UserListState {
     data object Loading : UserListState()
-    data class Content(val userList: List<UserUiModel>) : UserListState()
+    data class Content(val contentState: UserListContentState) : UserListState()
     data class Error(val errorInfo: String) : UserListState()
 }
+
+@Immutable
+data class UserListContentState(val userList: List<UserUiModel>)
 
 sealed class UserListEvent {
     data object OnSearchBarClicked : UserListEvent()

@@ -40,7 +40,7 @@ import com.example.casestudyn11.ui.model.UserUiModel
 
 @Composable
 fun UserListContent(
-    users: List<UserUiModel>,
+    contentState: UserListContentState,
     onUserClicked: (Int) -> Unit,
     onSearchBarClicked: () -> Unit,
     onFavoriteClicked: (Int, Boolean) -> Unit
@@ -59,7 +59,7 @@ fun UserListContent(
             contentPadding = PaddingValues(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(users) {
+            items(contentState.userList) {
                 UserItem(it, onUserClicked, onFavoriteClicked)
             }
         }
