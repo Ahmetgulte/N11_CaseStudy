@@ -98,6 +98,16 @@ fun SearchUserScreen(
                 }
             }
 
+            is SearchUserState.Error -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = (state as SearchUserState.Error).message)
+                }
+            }
+
             is SearchUserState.Empty -> {
                 Column(
                     modifier = Modifier.fillMaxSize(),

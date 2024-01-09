@@ -7,9 +7,12 @@ import com.example.casestudyn11.helper.FavoriteUpdatesDispatcher
 import com.example.casestudyn11.domain.GetUserListUseCase
 import com.example.casestudyn11.ui.model.UserUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,9 +26,18 @@ class UserListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UserListState>(UserListState.Loading)
     val uiState: StateFlow<UserListState> = _uiState.asStateFlow()
 
+    private val _events = Channel<UserListEvent>()
+    val events
+        get() = _events.receiveAsFlow()
+
     init {
         subscribeFavoriteUpdates()
-        viewModelScope.launch {
+        val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            _uiState.update {
+                UserListState.Error(throwable.message.orEmpty())
+            }
+        }
+        viewModelScope.launch(coroutineExceptionHandler) {
             val userList = getUserListUseCase.getUserList()
             _uiState.update {
                 UserListState.Content(userList)
@@ -36,6 +48,18 @@ class UserListViewModel @Inject constructor(
     fun updateFavorite(userId: Int, isFavorite: Boolean) {
         viewModelScope.launch {
             favoriteUpdatesDispatcher.updateUser(userId, isFavorite = isFavorite)
+        }
+    }
+
+    fun onSearchBarClicked() {
+        viewModelScope.launch {
+            _events.send(UserListEvent.OnSearchBarClicked)
+        }
+    }
+
+    fun onUserItemClicked(userId: Int) {
+        viewModelScope.launch {
+            _events.send(UserListEvent.OnUserItemClicked(userId))
         }
     }
 
@@ -65,4 +89,9 @@ sealed class UserListState {
     data object Loading : UserListState()
     data class Content(val userList: List<UserUiModel>) : UserListState()
     data class Error(val errorInfo: String) : UserListState()
+}
+
+sealed class UserListEvent {
+    data object OnSearchBarClicked : UserListEvent()
+    data class OnUserItemClicked(val userId: Int) : UserListEvent()
 }

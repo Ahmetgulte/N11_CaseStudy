@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.casestudyn11.domain.GetSearchedUsersUseCase
 import com.example.casestudyn11.ui.model.UserUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +26,12 @@ class SearchUserViewModel @Inject constructor(
     val events get() = _events.receiveAsFlow()
 
     fun searchUsers(query: String) {
-        viewModelScope.launch {
+        val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            _state.update {
+                SearchUserState.Error(throwable.message.orEmpty())
+            }
+        }
+        viewModelScope.launch(coroutineExceptionHandler) {
             _state.update {
                 SearchUserState.Loading
             }
@@ -54,6 +60,7 @@ sealed class SearchUserState {
     data object Loading : SearchUserState()
     data class Content(val userList: List<UserUiModel>) : SearchUserState()
     data object Empty : SearchUserState()
+    data class Error(val message: String) : SearchUserState()
 }
 
 sealed class SearchUserEvent {
